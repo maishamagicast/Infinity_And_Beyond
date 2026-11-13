@@ -1,0 +1,20 @@
+{
+  "mer_a_spirit": {
+    "name": "Spirit Rover",
+    "location": "Gusev Crater",
+    "status": "OFFLINE_CRITICAL",
+    "error_log": "MAIN_POWER_BUS_UNREACHABLE",
+    "puzzle": [
+      {
+        "step": 1,
+        "command": "bypass solar",
+        "success": "Solar array bypassed. Emergency power active."
+      }
+    ],
+    "payload": {
+      "title": "Carbonate Discovery",
+      "fact": "Proved this area was once a wet, non-acidic environment.",
+      "image": "/assets/payloads/spirit_carbonates.png"
+    }
+  }
+}
