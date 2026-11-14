@@ -1,20 +1,127 @@
 {
-  "mer_a_spirit": {
-    "name": "Spirit Rover",
-    "location": "Gusev Crater",
-    "status": "OFFLINE_CRITICAL",
-    "error_log": "MAIN_POWER_BUS_UNREACHABLE",
-    "puzzle": [
-      {
-        "step": 1,
-        "command": "bypass solar",
-        "success": "Solar array bypassed. Emergency power active."
+  "surface_targets": {
+    "mer_a_spirit": {
+      "id": "mer_a_spirit",
+      "name": "Spirit Rover (MER-A)",
+      "agency": "NASA / JPL",
+      "location": "Gusev Crater (14.57°S, 175.47°E)",
+      "active_years": "2004 – 2010",
+      "planned_duration": "90 Sols (Achieved 2,208 Sols)",
+      "status": "OFFLINE_CRITICAL",
+      "primary_error": "ERR 503: SOLAR_EFFICIENCY_CRITICAL (DUST_ACCUMULATION) & WHEEL_DRIVE_STALLED",
+      "diagnostic_hint": "Main solar bus is choked by Martian regolith. Bypass the solar array and mount the auxiliary flash drive.",
+      "puzzle_steps": [
+        {
+          "step": 1,
+          "accepted_commands": ["bypass solar", "bypass --sys solar", "bypass_solar"],
+          "output": "Solar bus bypassed. Drawing residual trickle charge from thermal survival heaters..."
+        },
+        {
+          "step": 2,
+          "accepted_commands": ["mount /dev/flash_mem", "mount flash_mem", "mount drive"],
+          "output": "Flash memory subsystem mounted at /mnt/spirit_archive. 1 file recovered."
+        },
+        {
+          "step": 3,
+          "accepted_commands": ["extract silica_log.dat", "extract", "read silica_log.dat"],
+          "output": "Decrypting APXS & Mini-TES spectrometer telemetry... DATA RECOVERY COMPLETE."
+        }
+      ],
+      "science_payload": {
+        "headline": "Ancient Hot Springs & Pure Silica",
+        "story": "After its right-front wheel broke in 2006, Spirit dragged it like a plow—accidentally scraping away top soil to reveal 90% pure silica. This proved ancient Mars once had hydrothermal hot springs or steam vents, key ingredients for microbial life.",
+        "image": "/assets/payloads/spirit_silica.png"
       }
-    ],
-    "payload": {
-      "title": "Carbonate Discovery",
-      "fact": "Proved this area was once a wet, non-acidic environment.",
-      "image": "/assets/payloads/spirit_carbonates.png"
+    },
+    "mer_b_opportunity": {
+      "id": "mer_b_opportunity",
+      "name": "Opportunity Rover (MER-B)",
+      "agency": "NASA / JPL",
+      "location": "Perseverance Valley, Endeavour Crater (1.95°S, 354.47°E)",
+      "active_years": "2004 – 2018",
+      "planned_duration": "90 Sols (Achieved 5,352 Sols / 45.16 km)",
+      "status": "HIBERNATION_LOCK",
+      "primary_error": "ERR 901: ATMOSPHERIC_OPACITY_TAU_10.8 // LOW_POWER_FAULT",
+      "diagnostic_hint": "A planet-wide 2018 dust storm plunged power to 22 Watt-hours. Clear the fault flag and switch memory to RAM-only mode.",
+      "puzzle_steps": [
+        {
+          "step": 1,
+          "accepted_commands": ["clear fault", "clear_fault", "reset fault"],
+          "output": "2018 dust-storm hibernation flag cleared. Core processor online."
+        },
+        {
+          "step": 2,
+          "accepted_commands": ["set mem ram_only", "ram_only", "mode ram"],
+          "output": "Worn flash memory bypassed. Operating in volatile RAM-only mode."
+        },
+        {
+          "step": 3,
+          "accepted_commands": ["extract blueberries.dat", "extract", "read blueberries.dat"],
+          "output": "Downloading Microscopic Imager scans... DATA RECOVERY COMPLETE."
+        }
+      ],
+      "science_payload": {
+        "headline": "Martian 'Blueberries' & Standing Water",
+        "story": "Opportunity drove over 28 miles—more than a full marathon—and discovered tiny iron-rich spheres nicknamed 'blueberries' embedded in rock outcrops. These hematite concretions form when mineral-rich groundwater soaks through porous rock.",
+        "image": "/assets/payloads/oppy_blueberries.png"
+      }
+    },
+    "viking_1_lander": {
+      "id": "viking_1_lander",
+      "name": "Viking 1 Lander",
+      "agency": "NASA / Langley",
+      "location": "Chryse Planitia (22.27°N, 312.05°E)",
+      "active_years": "1976 – 1982",
+      "planned_duration": "90 Days (Achieved 2,245 Sols)",
+      "status": "ANTENNA_MISALIGNED",
+      "primary_error": "ERR 1982: DOWNLINK_ANTENNA_ELEVATION_FAULT // NO_CARRIER",
+      "diagnostic_hint": "A faulty software update in 1982 pointed the high-gain antenna away from Earth. Realign the dish and dump the RTG telemetry.",
+      "puzzle_steps": [
+        {
+          "step": 1,
+          "accepted_commands": ["align antenna", "realign antenna", "align dish"],
+          "output": "High-gain S-band dish gimbaled back to Earth coordinates. Carrier lock established."
+        },
+        {
+          "step": 2,
+          "accepted_commands": ["check rtg", "rtg status", "power check"],
+          "output": "Plutonium-238 Radioisotope Thermoelectric Generators reading nominal."
+        },
+        {
+          "step": 3,
+          "accepted_commands": ["extract chryse_scan.dat", "extract", "read chryse_scan.dat"],
+          "output": "Reconstructing 1976 slow-scan facsimile surface panorama... DATA RECOVERY COMPLETE."
+        }
+      ],
+      "science_payload": {
+        "headline": "First Successful Touchdown & Rusty Soil",
+        "story": "Landing on July 20, 1976—seven years to the day after Apollo 11—Viking 1 transmitted the first clear color photographs from the surface of Mars and revealed that the planet's iconic red hue comes from iron-oxide-rich dust.",
+        "image": "/assets/payloads/viking1_surface.png"
+      }
+    }
+  },
+  "dsn_remote_targets": {
+    "voyager_1": {
+      "id": "voyager_1",
+      "name": "Voyager 1",
+      "location": "Interstellar Space (Beyond Heliopause)",
+      "distance_km": "25.8 Billion km (~167 AU)",
+      "simulated_ping_ms": 3200,
+      "signal_strength": "10^-22 Watts",
+      "status": "ACTIVE_EXTENDED_MISSION",
+      "telemetry_snippet": "CROSSING_1_LIGHT_DAY_BOUNDARY // PLASMA_WAVE_SUBSYSTEM_NOMINAL",
+      "fact": "Launched in 1977, Voyager 1 is the farthest human-made object in existence—reaching 1 full light-day away from Earth in November 2026. It carries the Golden Record, a 12-inch gold-plated copper disk containing sounds and images of life on Earth."
+    },
+    "pioneer_10": {
+      "id": "pioneer_10",
+      "name": "Pioneer 10",
+      "location": "Heading toward Aldebaran (Taurus Constellation)",
+      "distance_km": "20.4 Billion km (~136 AU)",
+      "simulated_ping_ms": 2600,
+      "signal_strength": "0.00 Watts (Signal Lost Jan 2003)",
+      "status": "SILENT_DRIFT",
+      "telemetry_snippet": "LAST_WHISPER_2003-01-23 // RTG_POWER_BELOW_TRANSMITTER_THRESHOLD",
+      "fact": "Pioneer 10 was the first spacecraft to cross the asteroid belt and capture close-up images of Jupiter. Though its nuclear power source faded in 2003, it continues coasting silently into deep space carrying a gold-anodized aluminum plaque depicting humanity."
     }
   }
 }
