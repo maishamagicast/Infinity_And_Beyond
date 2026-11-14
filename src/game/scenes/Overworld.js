@@ -40,7 +40,7 @@ export default class Overworld extends Phaser.Scene {
     this.cameras.main.setRoundPixels(true);
 
     this.prompt = this.add.text(0, 0, '[E] HACK', {
-      fontFamily: 'monospace', fontSize: '8px', color: '#00ff66',
+    fontFamily: 'monospace', fontSize: '8px', color: '#00ff66',
     }).setOrigin(0.5).setVisible(false);
 
     this.eKey = this.input.keyboard.addKey('E');
@@ -48,8 +48,19 @@ export default class Overworld extends Phaser.Scene {
     // Pause input while the terminal is open
     this.onClose = () => this.setInputEnabled(true);
     window.addEventListener('TERMINAL_CLOSED', this.onClose);
-    this.events.once('shutdown', () =>
-      window.removeEventListener('TERMINAL_CLOSED', this.onClose));
+
+    // Turn a rover green when it has been hacked
+    this.onHacked = (e) => {
+    const rover = this.hardware.getChildren().find(h => h.hardwareId === e.detail.id);
+    if (rover) rover.setTint(0x00ff66);
+    };
+    window.addEventListener('HARDWARE_HACKED', this.onHacked);
+
+    // Clean up the listeners when the scene shuts down
+    this.events.once('shutdown', () => {
+    window.removeEventListener('TERMINAL_CLOSED', this.onClose);
+    window.removeEventListener('HARDWARE_HACKED', this.onHacked);
+    });
   }
 
   update() {
@@ -59,14 +70,14 @@ export default class Overworld extends Phaser.Scene {
     const near = this.findNearbyHardware();
     this.prompt.setVisible(!!near);
     if (near) {
-      this.prompt.setPosition(near.x, near.y - 16);
-      if (Phaser.Input.Keyboard.JustDown(this.eKey)) this.openTerminal(near.hardwareId);
+    this.prompt.setPosition(near.x, near.y - 16);
+    if (Phaser.Input.Keyboard.JustDown(this.eKey)) this.openTerminal(near.hardwareId);
     }
   }
 
   findNearbyHardware() {
     return this.hardware.getChildren().find(h =>
-      Phaser.Math.Distance.Between(this.player.x, this.player.y, h.x, h.y) < INTERACT_DISTANCE);
+    Phaser.Math.Distance.Between(this.player.x, this.player.y, h.x, h.y) < INTERACT_DISTANCE);
   }
 
   openTerminal(id) {
