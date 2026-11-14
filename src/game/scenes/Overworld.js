@@ -43,6 +43,16 @@ export default class Overworld extends Phaser.Scene {
     fontFamily: 'monospace', fontSize: '8px', color: '#00ff66',
     }).setOrigin(0.5).setVisible(false);
 
+    
+    // Make the prompt pulse so it draws the eye
+    this.tweens.add({
+      targets: this.prompt,
+      alpha: 0.35,
+      duration: 500,
+      yoyo: true,
+      repeat: -1,
+    });
+
     this.eKey = this.input.keyboard.addKey('E');
 
 
