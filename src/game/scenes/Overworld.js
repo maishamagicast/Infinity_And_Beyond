@@ -45,6 +45,25 @@ export default class Overworld extends Phaser.Scene {
 
     this.eKey = this.input.keyboard.addKey('E');
 
+
+    // Intro message that fades away
+    const intro = this.add.text(240, 30, 'Find the abandoned hardware.\nWalk close and press E to hack it.', {
+      fontFamily: 'monospace',
+      fontSize: '10px',
+      color: '#00ff66',
+      align: 'center',
+      backgroundColor: '#000000aa',
+      padding: { x: 6, y: 4 },
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(10);
+
+    this.tweens.add({
+      targets: intro,
+      alpha: 0,
+      delay: 4000,
+      duration: 1000,
+      onComplete: () => intro.destroy(),
+    });
+
     // Pause input while the terminal is open
     this.onClose = () => this.setInputEnabled(true);
     window.addEventListener('TERMINAL_CLOSED', this.onClose);
