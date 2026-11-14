@@ -38,6 +38,7 @@ export default class Overworld extends Phaser.Scene {
 
     this.cameras.main.setBounds(0, 0, W, H).startFollow(this.player, true, 0.1, 0.1);
     this.cameras.main.setRoundPixels(true);
+    this.cameras.main.setZoom(1.5);
 
     this.prompt = this.add.text(0, 0, '[E] HACK', {
     fontFamily: 'monospace', fontSize: '8px', color: '#00ff66',
@@ -57,7 +58,7 @@ export default class Overworld extends Phaser.Scene {
 
 
     // Intro message that fades away
-    const intro = this.add.text(240, 30, 'Find the abandoned hardware.\nWalk close and press E to hack it.', {
+    const intro = this.add.text(240, 70, 'Find the abandoned hardware.\nWalk close and press E to hack it.', {
       fontFamily: 'monospace',
       fontSize: '10px',
       color: '#00ff66',
