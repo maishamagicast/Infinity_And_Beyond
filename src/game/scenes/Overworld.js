@@ -17,7 +17,13 @@ export default class Overworld extends Phaser.Scene {
     // ids must match hardware.json (coordinate with Dev 4)
     this.hardware = this.physics.add.staticGroup();
     this.hardware.add(new Hardware(this, 400, 250, 'rover_spirit', 'spirit'));
-    this.physics.add.collider(this.player, this.hardware);
+    
+    // Rocks: solid obstacles
+    this.rocks = this.physics.add.staticGroup();
+    [[200, 150], [300, 330], [550, 120], [650, 300], [800, 200]].forEach(([x, y]) => {
+    this.rocks.create(x, y, 'rock');
+    });
+    this.physics.add.collider(this.player, this.rocks);
 
     this.cameras.main.setBounds(0, 0, W, H).startFollow(this.player, true, 0.1, 0.1);
     this.cameras.main.setRoundPixels(true);
