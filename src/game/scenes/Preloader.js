@@ -12,7 +12,12 @@ export default class Preloader extends Phaser.Scene {
   }
 
   create() {
-    this.makeBox('astronaut', 12, 16, 0xffffff);
+    // Placeholder astronaut: white body with a blue visor facing right
+    const g = this.make.graphics({ x: 0, y: 0, add: false });
+    g.fillStyle(0xffffff).fillRect(0, 0, 12, 16);
+    g.fillStyle(0x3399ff).fillRect(7, 3, 5, 5);
+    g.generateTexture('astronaut', 12, 16);
+    g.destroy();
     this.makeBox('rover_spirit', 24, 16, 0xffaa00);
     this.makeBox('rock', 16, 16, 0x5a3b2a);
     this.scene.start('Overworld');

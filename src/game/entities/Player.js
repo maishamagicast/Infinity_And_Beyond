@@ -16,5 +16,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const dy = (k.S.isDown || k.DOWN.isDown ? 1 : 0) - (k.W.isDown || k.UP.isDown ? 1 : 0);
     this.setVelocity(dx * this.speed, dy * this.speed);
     this.body.velocity.normalize().scale(this.speed); // no faster diagonals
+    
+    // Face the direction we're walking
+    if (dx < 0) this.setFlipX(true);
+    else if (dx > 0) this.setFlipX(false);
   }
 }
