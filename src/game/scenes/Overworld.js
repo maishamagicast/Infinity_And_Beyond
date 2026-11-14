@@ -4,6 +4,15 @@ import Hardware from '../entities/Hardware';
 
 const INTERACT_DISTANCE = 32;
 
+
+// Each entry is one piece of hackable hardware.
+// The id must match the id in hardware.json (ask Dev 4 for the real ones).
+const HARDWARE = [
+  { id: 'spirit',      x: 400, y: 250, texture: 'rover_spirit' },
+  { id: 'opportunity', x: 700, y: 400, texture: 'rover_spirit' },
+  { id: 'curiosity',   x: 200, y: 450, texture: 'rover_spirit' },
+];
+
 export default class Overworld extends Phaser.Scene {
   constructor() { super('Overworld'); }
 
@@ -16,7 +25,9 @@ export default class Overworld extends Phaser.Scene {
 
     // ids must match hardware.json (coordinate with Dev 4)
     this.hardware = this.physics.add.staticGroup();
-    this.hardware.add(new Hardware(this, 400, 250, 'rover_spirit', 'spirit'));
+    HARDWARE.forEach(d => {
+    this.hardware.add(new Hardware(this, d.x, d.y, d.texture, d.id));
+});
     
     // Rocks: solid obstacles
     this.rocks = this.physics.add.staticGroup();
