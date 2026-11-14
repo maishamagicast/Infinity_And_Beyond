@@ -8,9 +8,9 @@ const INTERACT_DISTANCE = 32;
 // Each entry is one piece of hackable hardware.
 // The id must match the id in hardware.json (ask Dev 4 for the real ones).
 const HARDWARE = [
-  { id: 'spirit',      x: 400, y: 250, texture: 'rover_spirit' },
-  { id: 'opportunity', x: 700, y: 400, texture: 'rover_spirit' },
-  { id: 'curiosity',   x: 200, y: 450, texture: 'rover_spirit' },
+  { id: 'mer_a_spirit',      x: 400, y: 250, texture: 'rover_spirit' },
+  { id: 'mer_b_opportunity', x: 700, y: 400, texture: 'rover_spirit' },
+  { id: 'viking_1_lander',   x: 200, y: 450, texture: 'rover_spirit' },
 ];
 
 export default class Overworld extends Phaser.Scene {

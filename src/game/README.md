@@ -37,6 +37,9 @@ window.dispatchEvent(new Event('TERMINAL_CLOSED'));
 window.dispatchEvent(new CustomEvent('HARDWARE_HACKED', { detail: { id: 'spirit' } }));
 ```
 
+
 ## Hardware ids
-Current ids: `spirit`, `opportunity`, `curiosity`.
-These must match the ids in `src/data/hardware.json`.
+Ids sent in `TRIGGER_TERMINAL` match the keys under `surface_targets` in `src/data/hardware.json`:
+`mer_a_spirit`, `mer_b_opportunity`, `viking_1_lander`.
+
+Dev 3: look up the data with `hardware.surface_targets[e.detail.id]`.
