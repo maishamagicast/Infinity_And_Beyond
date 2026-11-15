@@ -28,6 +28,15 @@ export default class Overworld extends Phaser.Scene {
       this.hardware.add(new Hardware(this, d.x, d.y, d.texture, d.id));
     });
     this.physics.add.collider(this.player, this.hardware);
+    // Restore rovers already recovered (the React app saves this list)
+    try {
+      const saved = JSON.parse(localStorage.getItem('abnf.recovered.v1') ?? '[]');
+      this.hardware.getChildren().forEach(h => {
+        if (saved.includes(h.hardwareId)) h.setTint(0x00ff66);
+      });
+    } catch (e) {
+      // no saved progress, nothing to restore
+    }
 
     // Rocks: solid obstacles
     this.rocks = this.physics.add.staticGroup();
