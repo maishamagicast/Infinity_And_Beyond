@@ -3,7 +3,7 @@ import RemoteScanner from './RemoteScanner';
 
 /**
  * MarsObservationWindow — Displays the Base Control Room overlooking the Martian plain
- * and the giant Deep Space Network parabolic radio dish (as shown in WhatsApp Image 2026-11-15 at 13.44.07.jpeg).
+ * and the giant Deep Space Network parabolic radio dish.
  */
 function MarsObservationWindow({ onLaunch }) {
   return (
@@ -118,6 +118,17 @@ function PayloadModal({ payloadData, onClose }) {
         </div>
 
         <div className="space-y-3 font-term text-xl text-bone/90">
+          {science.image && (
+            <img
+              src={science.image}
+              alt={science.headline || payloadData.name}
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+              className="w-full max-h-48 object-cover rounded border-2 border-phosphor/60"
+            />
+          )}
+
           {science.headline && (
             <p className="font-pixel text-xs text-amber leading-snug">
               ★ {science.headline}
@@ -152,7 +163,7 @@ function PayloadModal({ payloadData, onClose }) {
 }
 
 /**
- * DsnConsole — Dev 3 Static DSN Hub Screen ("Home Base" UI)
+ * DsnConsole — Static DSN Hub Screen ("Home Base" UI)
  */
 export default function DsnConsole({ hardware = [], recovered = new Set(), onLaunch, onConnect, onReset }) {
   const [selectedPayload, setSelectedPayload] = useState(null);
@@ -225,9 +236,15 @@ export default function DsnConsole({ hardware = [], recovered = new Set(), onLau
 
             <div className="mt-4 p-3 bg-panel/70 border border-edge rounded text-xs font-tech space-y-1.5 text-dim">
               <div className="text-bone font-pixel text-[9px]">SURFACE PROTOCOL:</div>
-              <div>1. Click <strong className="text-amber">LAUNCH SURFACE EVA</strong> to deploy to Mars.</div>
-              <div>2. Walk using <strong className="text-phosphor">[W][A][S][D] / Arrows</strong>.</div>
-              <div>3. Approach abandoned rovers and press <strong className="text-phosphor">[E]</strong> to hack telemetry.</div>
+              <div>
+                1. Click <strong className="text-amber">LAUNCH SURFACE EVA</strong> to deploy to Mars.
+              </div>
+              <div>
+                2. Walk using <strong className="text-phosphor">[W][A][S][D] / Arrows</strong>.
+              </div>
+              <div>
+                3. Approach abandoned rovers and press <strong className="text-phosphor">[E]</strong> to hack telemetry.
+              </div>
               <div>4. Deep space probes can be pinged directly from the console!</div>
             </div>
           </div>

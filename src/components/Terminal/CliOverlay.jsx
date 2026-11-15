@@ -1,20 +1,3 @@
-// Dev 2 — The Hacker: Terminal UI & CLI Logic
-// CliOverlay.jsx — the reusable retro terminal overlay.
-//
-// Contract with Dev 3 (App.jsx):
-//   <CliOverlay key={active.id} puzzleData={active}
-//               onSolve={() => handleSolve(active.id)} onClose={closeTerminal} />
-//   - puzzleData: one hardware object from hardware.json (or Dev 3's
-//     mockHardware fallback). See InputParser.jsx for the optional
-//     `puzzle` block Dev 4 can add.
-//   - onSolve(id): called ONCE when the player types the correct
-//     command. App.jsx marks the craft recovered + fires
-//     HARDWARE_RECOVERED for Dev 1.
-//   - onClose(): Escape, the Disconnect button, or typing `exit`.
-//
-// Dev 2 tests this in isolation (per the plan) with a hardcoded mock —
-// see test/mockData.js. No Phaser, no App.jsx, no hardware.json needed.
-
 import { useEffect, useRef, useState } from 'react'
 import { parseCommand, getHint } from './Inputparser'
 

@@ -3,8 +3,8 @@ import DsnConsole from './components/Hub/DsnConsole';
 import GameContainer from './components/GameContainer';
 import CliOverlay from './components/Terminal/CliOverlay';
 import rawHardware from './data/hardware.json';
-
-const STORAGE_KEY = 'infinity_recovered_hardware_v1';
+import LobbyAudioController from './lobbyAudioController';
+const STORAGE_KEY = 'abnf.recovered.v1';
 
 /**
  * Normalizes hardware data from hardware.json
@@ -33,12 +33,13 @@ function normalizeHardware(raw) {
     }
   }
 
-  // Fallback for arrays or flat dictionaries
   if (list.length === 0) {
     if (Array.isArray(raw)) return raw;
     if (typeof raw === 'object' && raw !== null) {
       for (const [id, target] of Object.entries(raw)) {
-        list.push({ ...target, id: target.id || id });
+        if (!id.startsWith('_')) {
+          list.push({ ...target, id: target.id || id });
+        }
       }
     }
   }
@@ -48,7 +49,7 @@ function normalizeHardware(raw) {
 
 /**
  * Formats a hardware entry so CliOverlay and Inputparser get
- * the exact fields they expect regardless of schema variations.
+ * consistent fields for both multi-step surface rovers and remote DSN probes.
  */
 function formatPuzzleData(target) {
   if (!target) return null;
@@ -101,14 +102,10 @@ export default function App() {
   const hardware = useMemo(() => normalizeHardware(rawHardware), []);
   const byId = useMemo(() => new Map(hardware.map((h) => [h.id, h])), [hardware]);
 
-  // Main state machine routing: 'hub' (Home Base) | 'game' (Surface Phaser Canvas)
   const [view, setView] = useState('hub');
-  // Terminal overlay active ID (null if closed)
   const [activeId, setActiveId] = useState(null);
-  // Recovered craft set
   const [recovered, setRecovered] = useState(loadRecovered);
 
-  // Sync recovered state to localStorage
   useEffect(() => {
     saveRecovered(recovered);
   }, [recovered]);
@@ -117,21 +114,19 @@ export default function App() {
     (id) => {
       if (!byId.has(id)) {
         console.warn(`[App] Unknown hardware id "${id}". Check hardware.json.`);
+        window.dispatchEvent(new Event('TERMINAL_CLOSED'));
         return;
       }
-      setActiveId(id);
+      setActiveId((current) => current ?? id);
     },
     [byId]
   );
 
   const closeTerminal = useCallback(() => {
     setActiveId(null);
-    // Notify Dev 1's Phaser engine that terminal has closed so player movement can resume
     window.dispatchEvent(new Event('TERMINAL_CLOSED'));
   }, []);
 
-  // Listen for Dev 1's custom event:
-  // window.dispatchEvent(new CustomEvent('TRIGGER_TERMINAL', { detail: { id } }))
   useEffect(() => {
     const handleTrigger = (e) => {
       const id = e.detail?.id;
@@ -144,7 +139,6 @@ export default function App() {
     return () => window.removeEventListener('TRIGGER_TERMINAL', handleTrigger);
   }, [openTerminal]);
 
-  // Escape key closes the terminal overlay
   useEffect(() => {
     if (!activeId) return;
     const handleKeyDown = (e) => {
@@ -156,21 +150,16 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [activeId, closeTerminal]);
 
-  // Handle puzzle solved
-  const handleSolve = useCallback(
-    (id) => {
-      setRecovered((prev) => {
-        const next = new Set(prev);
-        next.add(id);
-        return next;
-      });
+  const handleSolve = useCallback((id) => {
+    setRecovered((prev) => {
+      const next = new Set(prev);
+      next.add(id);
+      return next;
+    });
 
-      // Dispatch events for Dev 1 to turn rover sprite green
-      window.dispatchEvent(new CustomEvent('HARDWARE_HACKED', { detail: { id } }));
-      window.dispatchEvent(new CustomEvent('HARDWARE_RECOVERED', { detail: { id } }));
-    },
-    []
-  );
+    window.dispatchEvent(new CustomEvent('HARDWARE_HACKED', { detail: { id } }));
+    window.dispatchEvent(new CustomEvent('HARDWARE_RECOVERED', { detail: { id } }));
+  }, []);
 
   const resetProgress = useCallback(() => {
     setRecovered(new Set());
@@ -188,7 +177,7 @@ export default function App() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-void font-tech text-bone">
-      {/* 1. DSN Home Base Console Screen */}
+      <LobbyAudioController />
       {view === 'hub' && (
         <DsnConsole
           hardware={hardware}
@@ -199,7 +188,6 @@ export default function App() {
         />
       )}
 
-      {/* 2. 2D Surface Exploration Canvas (Phaser Engine) */}
       {view === 'game' && (
         <GameContainer
           paused={Boolean(activeId)}
@@ -209,7 +197,6 @@ export default function App() {
         />
       )}
 
-      {/* 3. Retro Terminal Overlay */}
       {activeId && activePuzzleData && (
         <div
           role="dialog"
