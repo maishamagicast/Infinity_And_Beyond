@@ -1,1 +1,77 @@
 @import "tailwindcss";
+
+@theme {
+  --color-void: #0d0a08;
+  --color-panel: #201815;
+  --color-edge: #4a382c;
+  --color-screen: #0b1a12;
+  --color-phosphor: #5dff7e;
+  --color-phosphor-dim: #267339;
+  --color-amber: #ffb347;
+  --color-amber-dim: #99621b;
+  --color-rust: #b5472f;
+  --color-rust-700: #8c3822;
+  --color-rust-900: #42180e;
+  --color-dust: #e6c8a5;
+  --color-bone: #f1dcc0;
+  --color-dim: #c4a58c;
+}
+
+.font-pixel {
+  font-family: 'Press Start 2P', monospace;
+}
+
+.font-term {
+  font-family: 'VT323', monospace;
+}
+
+.font-tech {
+  font-family: 'Share Tech Mono', monospace;
+}
+
+/* CRT Screen Scanlines */
+.crt-screen {
+  background-color: #0b1a12;
+  box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8), 0 0 15px rgba(93, 255, 126, 0.15);
+}
+
+.crt-scanlines {
+  background: linear-gradient(
+    rgba(18, 16, 16, 0) 50%, 
+    rgba(0, 0, 0, 0.45) 50%
+  );
+  background-size: 100% 4px;
+  pointer-events: none;
+}
+
+.crt-text-phosphor {
+  color: #5dff7e;
+  text-shadow: 0 0 6px rgba(93, 255, 126, 0.6);
+}
+
+.crt-text-amber {
+  color: #ffb347;
+  text-shadow: 0 0 6px rgba(255, 179, 71, 0.6);
+}
+
+.glow {
+  text-shadow: 0 0 8px rgba(93, 255, 126, 0.65);
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.2; }
+}
+
+.animate-blink {
+  animation: blink 1.2s infinite;
+}
+
+@keyframes radar-sweep {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-radar {
+  animation: radar-sweep 4s linear infinite;
+}
