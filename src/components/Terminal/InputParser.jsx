@@ -1,35 +1,3 @@
-// Dev 2 — The Hacker: Terminal UI & CLI Logic
-// InputParser.jsx — pure logic, no React, no JSX. v2, 2026-11-14.
-// Updated for Dev 4's REAL hardware.json (found 2026-11-14 11:32):
-//
-//   {
-//     "mer_a_spirit": {
-//       "name": "Spirit Rover",
-//       "location": "Gusev Crater",
-//       "status": "OFFLINE_CRITICAL",
-//       "error_log": "MAIN_POWER_BUS_UNREACHABLE",
-//       "puzzle": [
-//         { "step": 1, "command": "bypass solar",
-//           "success": "Solar array bypassed. Emergency poweractive." }
-//       ],
-//       "payload": {
-//         "title": "Carbonate Discovery",
-//         "fact": "Proved this area was once a wet, non-acidic environment.",
-//         "image": "/assets/payloads/spirit_carbonates.png"
-//       }
-//     }
-//   }
-//
-// Differences from the mock / v1 assumption:
-//   - id is "mer_a_spirit", not "spirit" — GameContainer's fake-E
-//     button and Dev 1's Phaser code must dispatch that id.
-//   - `puzzle` is an ARRAY of steps, not an object.
-//   - fields are `location` (not `body`), `payload.fact` (not
-//     `summary`), `error_log` (not `telemetry`).
-// This parser accepts BOTH shapes: Dev 4's real one above, and the
-// old mock / object-puzzle shape, so it works before and after
-// Dev 4 adds more craft / steps.
-
 export const DEFAULT_COMMAND = 'run diagnostics'
 
 export function normalizeCommand(input) {
@@ -43,33 +11,44 @@ function line(text, tone = 'info') {
   return { text, tone }
 }
 
-// --- Field mapping: real schema first, mock schema as fallback ---
 export function getLocation(puzzleData) {
-  return puzzleData?.body ?? puzzleData?.location ?? puzzleData?.coordinates ?? 'Unknown'
+  return puzzleData?.location ?? puzzleData?.body ?? puzzleData?.coordinates ?? 'Unknown'
 }
+
 export function getSummary(puzzleData) {
   return (
-    puzzleData?.summary ??
+    puzzleData?.science_payload?.story ??
+    puzzleData?.fact ??
     puzzleData?.payload?.fact ??
-    puzzleData?.payload?.title ??
+    puzzleData?.summary ??
+    puzzleData?.science_payload?.headline ??
     'No summary yet.'
   )
 }
+
 export function getErrorLog(puzzleData) {
-  return puzzleData?.telemetry ?? puzzleData?.error_log ?? null
+  return (
+    puzzleData?.primary_error ??
+    puzzleData?.telemetry_snippet ??
+    puzzleData?.error_log ??
+    puzzleData?.telemetry ??
+    null
+  )
 }
 
-// --- Puzzle steps: array, object, or none ---
 export function getPuzzleSteps(puzzleData) {
-  const p = puzzleData?.puzzle
+  const p = puzzleData?.puzzle_steps ?? puzzleData?.puzzle
   if (Array.isArray(p)) {
-    return p.map((s) => ({
-      step: s.step,
-      command: s.command ?? s.answer ?? s.code,
-      aliases: s.aliases ?? [],
-      hint: s.hint,
-      success: s.success,
-    }))
+    return p.map((s) => {
+      const accepted = Array.isArray(s.accepted_commands) ? s.accepted_commands : []
+      return {
+        step: s.step,
+        command: accepted[0] ?? s.command ?? s.answer ?? s.code,
+        aliases: accepted.length > 0 ? accepted.slice(1) : (s.aliases ?? []),
+        hint: s.hint,
+        success: s.output ?? s.success,
+      }
+    })
   }
   if (p && typeof p === 'object') {
     return [{
@@ -77,7 +56,7 @@ export function getPuzzleSteps(puzzleData) {
       command: p.command ?? p.answer ?? p.code,
       aliases: p.aliases ?? [],
       hint: p.hint,
-      success: p.success,
+      success: p.output ?? p.success,
     }]
   }
   return []
@@ -89,9 +68,6 @@ function expectedCommands(puzzleData, stepIndex = 0) {
   if (step?.command) {
     const main = normalizeCommand(step.command)
     const aliases = (step.aliases ?? []).map(normalizeCommand)
-    // NOTE: no 'run diagnostics' fallback here on purpose.
-    // When Dev 4 sets a real command ("bypass solar"), that IS
-    // the answer — accepting the old fallback would cheat it.
     return { main, all: [...new Set([main, ...aliases])], step, total: steps.length }
   }
   return {
@@ -105,16 +81,17 @@ function expectedCommands(puzzleData, stepIndex = 0) {
 export function getHint(puzzleData, stepIndex = 0) {
   const { main, step, total } = expectedCommands(puzzleData, stepIndex)
   if (step?.hint) return step.hint
+  if (stepIndex === 0 && puzzleData?.diagnostic_hint) {
+    return `${puzzleData.diagnostic_hint} (Step 1 of ${total}: try "${main}")`
+  }
   const prefix = total > 1 ? `Step ${stepIndex + 1} of ${total}: ` : ''
   return `${prefix}Hint: try "${main}"`
 }
 
 export function getAsciiArt(puzzleData) {
   const id = String(puzzleData?.id ?? '').toLowerCase()
-  const name = String(puzzleData?.name ?? '').toLowerCase()
-  const isSpirit = id.includes('spirit') || id.includes('mer_a') || name.includes('spirit')
   const arts = {
-    spirit: [
+    rover: [
       '      _______',
       '  ___/       \\___',
       ' |   O       O   |',
@@ -123,37 +100,28 @@ export function getAsciiArt(puzzleData) {
       '      |  |  |  |',
       '     _|  |  |  |_',
     ],
-    'voyager-1': [
+    viking: [
+      '       __[===]__',
+      '      /  VIKING \\',
+      '     |  (o) (o)  |',
+      '    /|___________|\\',
+      '   /   |       |   \\',
+      ' _/_  _|_     _|_  _\\_',
+    ],
+    probe: [
       '        \\  |  /',
       '         \\ | /',
       '      ____\\|/____',
-      '     /    |    \\',
-      '    |  DISH  *  |',
-      '     \\___ | ___/',
-      '         |',
-      '      --- | ---',
-    ],
-    'apollo-11': [
-      '         /\\',
-      '        /  \\',
-      '       |    |',
-      '      _|____|_',
-      '     / |    | \\',
-      '    /  |    |  \\',
-      '   |   |    |   |',
+      '     /     |     \\',
+      '    |  DISH  *    |',
+      '     \\___  |  ___/',
+      '           |',
+      '        --- ---',
     ],
   }
-  if (id.includes('voyager')) return arts['voyager-1']
-  if (id.includes('apollo')) return arts['apollo-11']
-  if (isSpirit) return arts.spirit
-  return [
-    '      .--.',
-    '     |    |',
-    '  ___|    |___',
-    ' |   SATELLITE  |',
-    '  \\__|    |__/',
-    '     |    |',
-  ]
+  if (id.includes('viking')) return arts.viking
+  if (id.includes('voyager') || id.includes('pioneer')) return arts.probe
+  return arts.rover
 }
 
 export function getHelpLines(puzzleData, stepIndex = 0) {
@@ -161,12 +129,12 @@ export function getHelpLines(puzzleData, stepIndex = 0) {
   return [
     line('Available commands:', 'dim'),
     line('  help               — show this list', 'info'),
-    line('  ping [name]        — ping this craft (or another by id)', 'info'),
-    line('  status             — show where it is and what it did', 'info'),
-    line('  scan               — scan for a signal anomaly', 'info'),
-    line('  decode telemetry   — read its last science data', 'info'),
-    line('  traceroute         — trace the signal back to Earth', 'info'),
-    line(`  ${main.padEnd(19)}— recover its data`, 'success'),
+    line('  ping [name]        — ping this craft', 'info'),
+    line('  status             — show telemetry & mission stats', 'info'),
+    line('  scan               — scan for subsystem faults', 'info'),
+    line('  decode telemetry   — read archived science logs', 'info'),
+    line('  traceroute         — trace signal path to Earth', 'info'),
+    line(`  ${main.padEnd(19)}— execute recovery step`, 'success'),
     line('  clear              — clear the screen', 'info'),
     line('  exit               — disconnect and return', 'info'),
   ]
@@ -183,44 +151,32 @@ function pingLines(puzzleData, arg) {
       line(`Try: ping ${puzzleData?.id ?? ''}`, 'info'),
     ]
   }
-  const delay = id.includes('voyager')
-    ? '22h 14m (light-time)'
-    : id.includes('apollo')
-      ? '1.3s (light-time)'
-      : '12m 04s (light-time)'
+  const delay = puzzleData?.simulated_ping_ms
+    ? `${puzzleData.simulated_ping_ms}ms (simulated DSN relay) // Distance: ${puzzleData.distance_km ?? 'Deep Space'}`
+    : '12m 04s (one-way Mars light-time)'
   return [
     line(`Pinging ${puzzleData?.name ?? 'craft'} ...`, 'info'),
-    line(`Reply in ${delay}. Signal faint, but alive in the archive.`, 'success'),
+    line(`Reply: ${delay}`, 'success'),
+    ...(puzzleData?.signal_strength ? [line(`Carrier strength: ${puzzleData.signal_strength}`, 'info')] : []),
     line(getHint(puzzleData), 'dim'),
   ]
 }
 
 function statusLines(puzzleData) {
+  const payloadTitle = puzzleData?.science_payload?.headline ?? puzzleData?.payload?.title
   const lines = [
     line(`${puzzleData?.name ?? 'Unknown craft'}`, 'success'),
     line(`Location: ${getLocation(puzzleData)}`, 'info'),
     line(`Status: ${puzzleData?.status ?? 'Unknown'}`, 'info'),
-    line(`Science: ${getSummary(puzzleData)}`, 'info'),
   ]
-  if (puzzleData?.payload?.title) lines.push(line(`Payload: ${puzzleData.payload.title}`, 'info'))
-  if (getErrorLog(puzzleData)) lines.push(line(`Error log: ${getErrorLog(puzzleData)}`, 'error'))
-  if (puzzleData?.coordinates) lines.push(line(`Last known coordinates: ${puzzleData.coordinates}`, 'info'))
+  if (puzzleData?.active_years) lines.push(line(`Active Years: ${puzzleData.active_years} (${puzzleData.planned_duration ?? ''})`, 'info'))
+  if (puzzleData?.distance_km) lines.push(line(`Distance: ${puzzleData.distance_km}`, 'info'))
+  if (puzzleData?.signal_strength) lines.push(line(`Signal: ${puzzleData.signal_strength}`, 'info'))
+  if (payloadTitle) lines.push(line(`Payload: ${payloadTitle}`, 'info'))
+  if (getErrorLog(puzzleData)) lines.push(line(`Diagnostics: ${getErrorLog(puzzleData)}`, 'error'))
   return lines
 }
 
-/**
- * Parse one line of terminal input.
- * context.step is the current puzzle-step index (0-based); CliOverlay
- * keeps it and advances it on a 'progress' result.
- * Returns { action, lines, nextStep? } where action is:
- *   'print'    — append lines, stay in the terminal
- *   'clear'    — clear the screen
- *   'exit'     — CliOverlay should call onClose()
- *   'progress' — one puzzle step solved, more remain; CliOverlay
- *                should move to nextStep and NOT call onSolve() yet
- *   'solve'    — final puzzle step solved; CliOverlay should call
- *                onSolve() once and append lines.
- */
 export function parseCommand(rawInput, puzzleData, context = {}) {
   const stepIndex = context.step ?? 0
   const input = normalizeCommand(rawInput)
@@ -254,23 +210,21 @@ export function parseCommand(rawInput, puzzleData, context = {}) {
       action: 'print',
       lines: [
         line('Scanning… anomaly found in the old data cache.', 'info'),
-        line('One file is still readable. It needs a diagnostic run.', 'success'),
+        ...(getErrorLog(puzzleData) ? [line(getErrorLog(puzzleData), 'error')] : []),
         line(getHint(puzzleData, stepIndex), 'dim'),
       ],
     }
   }
   if (input === 'decode telemetry' || input === 'telemetry' || input === 'decode' || input === 'read telemetry') {
-    const payload = puzzleData?.payload
+    const payload = puzzleData?.science_payload ?? puzzleData?.payload
+    const headline = payload?.headline ?? payload?.title
     return {
       action: 'print',
       lines: [
         line('— Last telemetry —', 'dim'),
-        ...(payload?.title ? [line(`Payload: ${payload.title}`, 'info')] : []),
-        line(payload?.fact ?? puzzleData?.summary ?? 'No telemetry on file.', 'info'),
-        ...(getErrorLog(puzzleData) ? [line(`Error log: ${getErrorLog(puzzleData)}`, 'error')] : []),
-        ...(payload?.image ? [line(`Image: ${payload.image}`, 'dim')] : []),
-        ...(puzzleData?.coordinates ? [line(`Coordinates: ${puzzleData.coordinates}`, 'info')] : []),
-        line('Telemetry read. The full archive still needs the puzzle command.', 'dim'),
+        ...(headline ? [line(`Payload: ${headline}`, 'info')] : []),
+        line(getSummary(puzzleData), 'info'),
+        ...(getErrorLog(puzzleData) ? [line(`Log: ${getErrorLog(puzzleData)}`, 'error')] : []),
         line(getHint(puzzleData, stepIndex), 'dim'),
       ],
     }
@@ -290,12 +244,10 @@ export function parseCommand(rawInput, puzzleData, context = {}) {
     return { action: 'print', lines: pingLines(puzzleData, input.slice(4).trim()) }
   }
 
-  // The solve command — exact match for the CURRENT step.
   if (all.includes(input)) {
     const successText =
       step?.success ??
-      `${puzzleData?.name ?? 'Craft'} data recovered. ${getSummary(puzzleData)}`.trim()
-    // More steps remain: progress, don't recover yet.
+      `${puzzleData?.name ?? 'Craft'} telemetry locked.`
     if (total > 1 && stepIndex < total - 1) {
       const next = expectedCommands(puzzleData, stepIndex + 1)
       return {
@@ -308,21 +260,21 @@ export function parseCommand(rawInput, puzzleData, context = {}) {
         ],
       }
     }
+    const payload = puzzleData?.science_payload ?? puzzleData?.payload
+    const headline = payload?.headline ?? payload?.title
     return {
       action: 'solve',
       lines: [
         ...getAsciiArt(puzzleData).map((t) => line(t, 'success')),
         line('— DATA RECOVERED —', 'success'),
         line(successText, 'success'),
-        ...(puzzleData?.payload?.title ? [line(`Payload: ${puzzleData.payload.title}`, 'info')] : []),
-        ...(puzzleData?.payload?.fact ? [line(puzzleData.payload.fact, 'info')] : []),
-        ...(getErrorLog(puzzleData) && !puzzleData?.payload ? [line(getErrorLog(puzzleData), 'info')] : []),
+        ...(headline ? [line(`Discovery: ${headline}`, 'info')] : []),
+        line(getSummary(puzzleData), 'info'),
         line('Press Disconnect (or type exit) to return to base.', 'dim'),
       ],
     }
   }
 
-  // Unknown command — never punish, always point forward.
   const close = all.some((cmd) => cmd.includes(input) || input.includes(cmd))
   return {
     action: 'print',

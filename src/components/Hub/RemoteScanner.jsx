@@ -1,5 +1,3 @@
-// Lists every piece of hardware with its signal state.
-// Entries with `remote: true` (deep-space probes you can't walk up to) can be pinged from here.
 export default function RemoteScanner({ hardware, recovered, onConnect }) {
   return (
     <section aria-labelledby="scanner-title" className="flex min-h-0 flex-col border-2 border-phosphor-dim bg-black/70 p-4">
@@ -18,7 +16,7 @@ export default function RemoteScanner({ hardware, recovered, onConnect }) {
               <span className="min-w-0 flex-1">
                 <span className="block truncate">{hw.name}</span>
                 <span className="block truncate text-base text-phosphor-dim">
-                  {done ? 'Data recovered' : hw.body ?? 'Signal faint'}
+                  {done ? 'Data recovered' : hw.body ?? hw.location ?? 'Signal faint'}
                 </span>
               </span>
               {hw.remote && !done && (

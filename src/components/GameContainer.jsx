@@ -1,8 +1,5 @@
 import { useEffect, useRef } from 'react'
 
-// Dev 1 contract: src/game/config.js must export
-//   createGame(parentElement: HTMLElement) => Phaser.Game
-// Until that file exists, a placeholder with a fake trigger button is shown.
 const configModules = import.meta.glob('../game/config.js')
 
 export default function GameContainer({ paused = false }) {
@@ -10,7 +7,6 @@ export default function GameContainer({ paused = false }) {
   const gameRef = useRef(null)
   const hasGame = Object.keys(configModules).length > 0
 
-  // Create / destroy Phaser. The cleanup keeps React StrictMode (double-mount) from spawning two canvases.
   useEffect(() => {
     if (!hasGame) return
     let cancelled = false
@@ -25,7 +21,6 @@ export default function GameContainer({ paused = false }) {
     }
   }, [hasGame])
 
-  // While the terminal is open, stop Phaser from stealing keystrokes (WASD, E) and freeze the scene.
   useEffect(() => {
     const game = gameRef.current
     if (!game) return
@@ -34,7 +29,7 @@ export default function GameContainer({ paused = false }) {
       kb.enabled = !paused
       kb.preventDefault = !paused
     }
-    game.scene?.getScenes(true).forEach((s) => (paused ? s.scene.pause() : s.scene.resume()))
+    game.scene?.getScenes(false).forEach((s) => (paused ? s.scene.pause() : s.scene.resume()))
   }, [paused])
 
   if (!hasGame) {
@@ -43,7 +38,7 @@ export default function GameContainer({ paused = false }) {
         <p>Phaser canvas not found (src/game/config.js).</p>
         <button
           className="border-2 border-phosphor px-4 py-2 font-pixel text-xs text-phosphor hover:bg-phosphor hover:text-void focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber"
-          onClick={() => window.dispatchEvent(new CustomEvent('TRIGGER_TERMINAL', { detail: { id: 'spirit' } }))}
+          onClick={() => window.dispatchEvent(new CustomEvent('TRIGGER_TERMINAL', { detail: { id: 'mer_a_spirit' } }))}
         >
           Fake the E key on Spirit
         </button>
