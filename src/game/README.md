@@ -20,9 +20,9 @@ export default function GameContainer() {
 
 | Event | Direction | Detail | When |
 |---|---|---|---|
-| `TRIGGER_TERMINAL` | Phaser -> React | `{ id: 'spirit' }` | Player presses E next to hardware |
-| `TERMINAL_CLOSED` | React -> Phaser | none | Terminal closes, so movement resumes |
-| `HARDWARE_HACKED` | React -> Phaser | `{ id: 'spirit' }` | Hack succeeded, so the rover turns green |
+| `TRIGGER_TERMINAL` | Phaser -> React | `{ id: 'mer_a_spirit' }` | Player presses E next to hardware |
+| `HARDWARE_RECOVERED` | React -> Phaser | `{ id }` | Hack solved, so the rover turns green (`HARDWARE_HACKED` also works) |
+| scene `resume` | React -> Phaser | n/a | The app pauses the scene while the terminal is open and resumes it on close; Phaser unfreezes automatically (`TERMINAL_CLOSED` also works) |
 
 ### Listening (React)
 ```js
