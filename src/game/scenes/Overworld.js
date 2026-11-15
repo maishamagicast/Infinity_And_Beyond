@@ -2,112 +2,171 @@ import Phaser from 'phaser';
 import Player from '../entities/Player';
 import Hardware from '../entities/Hardware';
 
-const INTERACT_DISTANCE = 32;
+const INTERACT_DISTANCE = 48;
 
-
-// Each entry is one piece of hackable hardware.
-// The id must match the id in hardware.json (ask Dev 4 for the real ones).
+// Hardware placement matching hardware.json surface_targets
 const HARDWARE = [
-  { id: 'mer_a_spirit',      x: 400, y: 250, texture: 'rover_spirit' },
-  { id: 'mer_b_opportunity', x: 700, y: 400, texture: 'rover_spirit' },
-  { id: 'viking_1_lander',   x: 200, y: 450, texture: 'rover_spirit' },
+  { id: 'mer_a_spirit',      x: 480, y: 220, texture: 'rover_spirit' },
+  { id: 'mer_b_opportunity', x: 740, y: 390, texture: 'rover_spirit' },
+  { id: 'viking_1_lander',   x: 200, y: 430, texture: 'rover_spirit' },
+];
+
+// Rock cluster positions spread across the world
+const ROCKS = [
+  [130, 160], [220, 180], [310, 310], [380, 380],
+  [520, 140], [600, 280], [700, 180], [820, 240],
+  [150, 360], [260, 460], [650, 440], [870, 160],
+  [420, 480], [570, 380], [760, 310], [100, 480],
+  [930, 420], [300, 150], [680, 460], [810, 380],
 ];
 
 export default class Overworld extends Phaser.Scene {
   constructor() { super('Overworld'); }
 
   create() {
-    const W = 960, H = 540;
+    const W = 1024, H = 576;
     this.physics.world.setBounds(0, 0, W, H);
-    this.add.rectangle(0, 0, W, H, 0x8a4b2d).setOrigin(0);   // placeholder ground
 
-    this.player = new Player(this, 100, 100);
+    // ── TILED TERRAIN BASE ──────────────────────────────────────────────
+    this.drawTerrain(W, H);
 
-    // ids must match hardware.json (coordinate with Dev 4)
+    // ── HARDWARE (rovers / landers) ─────────────────────────────────────
     this.hardware = this.physics.add.staticGroup();
     HARDWARE.forEach(d => {
-    this.hardware.add(new Hardware(this, d.x, d.y, d.texture, d.id));
-});
-    
-    // Rocks: solid obstacles
-    this.rocks = this.physics.add.staticGroup();
-    [[200, 150], [300, 330], [550, 120], [650, 300], [800, 200]].forEach(([x, y]) => {
-    this.rocks.create(x, y, 'rock');
+      this.hardware.add(new Hardware(this, d.x, d.y, d.texture, d.id));
     });
+
+    // ── ROCK OBSTACLES ──────────────────────────────────────────────────
+    this.rocks = this.physics.add.staticGroup();
+    ROCKS.forEach(([x, y]) => {
+      const r = this.rocks.create(x, y, 'rock');
+      r.setScale(Phaser.Math.FloatBetween(0.7, 1.3));
+      r.refreshBody();
+    });
+
+    // ── PLAYER ──────────────────────────────────────────────────────────
+    this.player = new Player(this, 120, 120);
     this.physics.add.collider(this.player, this.rocks);
 
-    this.cameras.main.setBounds(0, 0, W, H).startFollow(this.player, true, 0.1, 0.1);
-    this.cameras.main.setRoundPixels(true);
-    this.cameras.main.setZoom(1.5);
+    // ── CAMERA ──────────────────────────────────────────────────────────
+    this.cameras.main
+      .setBounds(0, 0, W, H)
+      .startFollow(this.player, true, 0.08, 0.08)
+      .setRoundPixels(true)
+      .setZoom(1.6);
 
+    // ── [E] HACK PROMPT ─────────────────────────────────────────────────
     this.prompt = this.add.text(0, 0, '[E] HACK', {
-    fontFamily: 'monospace', fontSize: '8px', color: '#00ff66',
-    }).setOrigin(0.5).setVisible(false);
+      fontFamily: 'monospace',
+      fontSize: '9px',
+      color: '#00ff66',
+      backgroundColor: '#00000099',
+      padding: { x: 4, y: 2 },
+    }).setOrigin(0.5, 1).setVisible(false).setDepth(20);
 
-    
-    // Make the prompt pulse so it draws the eye
     this.tweens.add({
       targets: this.prompt,
-      alpha: 0.35,
-      duration: 500,
+      alpha: 0.3,
+      duration: 450,
       yoyo: true,
       repeat: -1,
     });
 
-    this.eKey = this.input.keyboard.addKey('E');
-
-
-    // Intro message that fades away
-    const intro = this.add.text(240, 70, 'Find the abandoned hardware.\nWalk close and press E to hack it.', {
-      fontFamily: 'monospace',
-      fontSize: '10px',
-      color: '#00ff66',
-      align: 'center',
-      backgroundColor: '#000000aa',
-      padding: { x: 6, y: 4 },
-    }).setOrigin(0.5).setScrollFactor(0).setDepth(10);
+    // ── INTRO FADE TEXT ─────────────────────────────────────────────────
+    const intro = this.add.text(W / 2, 60,
+      'Locate the abandoned hardware.\nWalk close and press E to hack.',
+      {
+        fontFamily: 'monospace', fontSize: '10px', color: '#7dff9a',
+        align: 'center', backgroundColor: '#000000bb',
+        padding: { x: 10, y: 6 },
+      }
+    ).setOrigin(0.5).setScrollFactor(0).setDepth(30);
 
     this.tweens.add({
-      targets: intro,
-      alpha: 0,
-      delay: 4000,
-      duration: 1000,
+      targets: intro, alpha: 0,
+      delay: 4000, duration: 1200,
       onComplete: () => intro.destroy(),
     });
 
-    // Pause input while the terminal is open
+    // ── TERMINAL EVENT LISTENERS ─────────────────────────────────────────
+    this.eKey = this.input.keyboard.addKey('E');
     this.onClose = () => this.setInputEnabled(true);
     window.addEventListener('TERMINAL_CLOSED', this.onClose);
 
-    // Turn a rover green when it has been hacked
     this.onHacked = (e) => {
-    const rover = this.hardware.getChildren().find(h => h.hardwareId === e.detail.id);
-    if (rover) rover.setTint(0x00ff66);
+      const rover = this.hardware.getChildren().find(h => h.hardwareId === e.detail.id);
+      if (rover) {
+        rover.setTint(0x00ff66);
+        this.addHackedFX(rover.x, rover.y);
+      }
     };
     window.addEventListener('HARDWARE_HACKED', this.onHacked);
 
-    // Clean up the listeners when the scene shuts down
     this.events.once('shutdown', () => {
-    window.removeEventListener('TERMINAL_CLOSED', this.onClose);
-    window.removeEventListener('HARDWARE_HACKED', this.onHacked);
+      window.removeEventListener('TERMINAL_CLOSED', this.onClose);
+      window.removeEventListener('HARDWARE_HACKED', this.onHacked);
+    });
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Procedural tile terrain — matches multi-tone Mars look from reference
+  // ─────────────────────────────────────────────────────────────────────────
+  drawTerrain(W, H) {
+    const TS = 32;
+    const cols = Math.ceil(W / TS) + 1;
+    const rows = Math.ceil(H / TS) + 1;
+
+    // Simple deterministic pseudo-random based on tile position
+    const pick = (tx, ty) => {
+      const v = ((tx * 1234 + ty * 5678) ^ (tx * 7 + ty * 13)) & 0xffff;
+      if (v % 7 === 0) return 'tile_dark';
+      if (v % 3 === 0) return 'tile_mars_b';
+      if (v % 5 === 0) return 'tile_mars_c';
+      return 'tile_mars_a';
+    };
+
+    for (let ty = 0; ty < rows; ty++) {
+      for (let tx = 0; tx < cols; tx++) {
+        const key = pick(tx, ty);
+        this.add.image(tx * TS + TS / 2, ty * TS + TS / 2, key)
+          .setDepth(0);
+      }
+    }
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────
+  // Particle-like "hacked" flash effect
+  // ─────────────────────────────────────────────────────────────────────────
+  addHackedFX(x, y) {
+    const txt = this.add.text(x, y - 32, '✓ HACKED', {
+      fontFamily: 'monospace', fontSize: '8px', color: '#00ff66',
+      backgroundColor: '#000000bb', padding: { x: 4, y: 2 },
+    }).setOrigin(0.5).setDepth(25);
+
+    this.tweens.add({
+      targets: txt, y: y - 60, alpha: 0,
+      duration: 1800, ease: 'Power2',
+      onComplete: () => txt.destroy(),
     });
   }
 
   update() {
-    if (!this.player.keys.W.enabled) return;   // input paused
+    if (!this.player.keys.W.enabled) return; // paused
+
     this.player.update();
 
     const near = this.findNearbyHardware();
     this.prompt.setVisible(!!near);
     if (near) {
-    this.prompt.setPosition(near.x, near.y - 16);
-    if (Phaser.Input.Keyboard.JustDown(this.eKey)) this.openTerminal(near.hardwareId);
+      this.prompt.setPosition(near.x, near.y - near.displayHeight * 0.5 - 6);
+      if (Phaser.Input.Keyboard.JustDown(this.eKey)) this.openTerminal(near.hardwareId);
     }
   }
 
   findNearbyHardware() {
     return this.hardware.getChildren().find(h =>
-    Phaser.Math.Distance.Between(this.player.x, this.player.y, h.x, h.y) < INTERACT_DISTANCE);
+      Phaser.Math.Distance.Between(this.player.x, this.player.y, h.x, h.y) < INTERACT_DISTANCE
+    );
   }
 
   openTerminal(id) {
@@ -119,7 +178,8 @@ export default class Overworld extends Phaser.Scene {
     Object.values(this.player.keys).forEach(k => (k.enabled = on));
     this.eKey.enabled = on;
     if (!on) this.player.setVelocity(0, 0);
-    // Stop Phaser from swallowing keys the terminal needs
-    on ? this.input.keyboard.enableGlobalCapture() : this.input.keyboard.disableGlobalCapture();
+    on
+      ? this.input.keyboard.enableGlobalCapture()
+      : this.input.keyboard.disableGlobalCapture();
   }
 }
